@@ -1,0 +1,119 @@
+Problem Statement -
+Setup a CI/CD pipeline using the tools your choice(or preferably the mentioned tools).
+1. It should deploy a simple web application to a server on a code push to a
+repository.
+2. The deployed web application should be reachable on any web browser.
+3. Make it scalable such that when load increases the number of servers scale
+up and down making sure the new servers have the updated code.
+Additional requirements
+1. Setup to be done using AWS, Jenkins, CodeDeploy
+2. Jenkins should not be on the same server as the application being
+deployed to
+Tools 1. Jenkins 2. Git/Bitbucket 3. AWS EC2 4. AWS CodeDeploy
+Solution -
+Step 1 - Create Two IAM roles as -
+1. In first provide AmazonEC2RoleforAWSCodeDeploy and AmazonS3FullAccess
+2. In second provide codedeplyrole role.
+This roles will be used further.
+1.
+2.
+Step 2 - Create 4 ec2 instances and put user data in it -
+
+User data i have used -
+#!/bin/bash
+sudo yum -y update
+sudo yum -y install ruby
+sudo yum -y install wget
+cd /home/ec2-user
+Wget
+https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/l
+atest/install
+sudo chmod +x ./install
+sudo ./install auto
+sudo yum install -y python-pip
+sudo pip install awscli
+- This user data includes installation of some software like aws
+codedeploy , aws cli etc.
+- add first IAM role to the instances .
+- Create Security Group and provide http 80 and ssh 22 rules.
+- Than create instances.
+Step 3 - Create an of any of the instance which we
+will use in AutoScalingGroup.
+Step 4 - Create Application Load Balancer.
+1. Create target group than load balancer , in target group give
+path to /index.html , which is the app file containing code over
+git.
+Now Create Application Load Balancer -
+
+We have added the targets to already created instances.
+Step 5 - Create Launch Configurations and than
+create Auto scaling group.
+Launch Configuration created.
+Now create AutoScalingGroup
+I have attached Application Load Balancer to it which is already
+Created
+Give Desired and max capacity to 2
+Auto Scaling Group is created.
+We can see as soon as ASG created , the two instances are up.
+
+Step 6 - Create one Jenkins Instance and install
+jenkins software in it.
+I have used the below link to install JENKINS server into the ec2
+instance -
+https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-onAWS/
+NOTE - i have also installed git in it , using Command -
+- yum install git -y
+Step 7 - Create CodeDeploy
+Create Application
+Now Create Deployment Group.
+Now Choose Amazon Ec2 ASG which we have Created earlier.
+Now choose Application Load balancer which we have created
+earlier.
+Deployment Group Is Created.
+Now we will use Jenkins for Creating a pipeline that will use git as a
+source and will run the CodeDeploy.
+Step 8 - Create an S3 bucket.
+Step 9 - Go to Jenkins Server
+- Install AWS Code Deploy plugin in it
+https://github.com/vaibhavjain2099/aws_codedeploy_using_github.
+git
+Create a jenkins pipeline by taking GIT as a source , Trigger - Poll
+SCM ( * * * * * ) which means it will run job in every minute.
+Put S3 Bucket name etc.
+Choose post-build-action as deploy an application AWS
+CodeDeploy
+Than give all info of CodeDeploy like app name , deployment group
+name , s3 bucket and prefix name.
+Than for Authorization we can use Aws Acess keys and Secret
+keys.
+Step 10 - Build Jenkins Pipeline
+Check console output.
+As soon as we will hit the Build Now button the job will run and
+trigger for code deploy deployment . we can see here it is in
+progress.
+Here we can see , it take time , as we have choosed the option of
+build all at once.
+Step 11 -
+Go to AWS Load balancer portal and go to that
+particular ELB you have Created and copy the DNS and
+paste it on browser , your application will be running .
+This is the first version of application. Now if i made any change to
+the code it will automatically reflect to the Web browser within some
+minutes.
+We can check that as soon as we run the jenkins job it run the
+deployment the data will get stored in s3 bucket.
+We can see as soon as we changed the code in index.html file , a
+new deployment will be triggered by jenkins job .
+In progress
+And here is the Our Final Output .
+We can see that it shows the recent changed done by us in the html
+file.
+Since we have used Auto Scaling Group and using ELB and its url
+to access the application , we can confirm that it scalable such that
+when load increases the number of servers scale up and down
+making sure the new servers have the updated code.
+Github repo used -
+https://github.com/vaibhavjain2099/aws_codedeploy_using_github.
+git
+Pardon me if i missed any step in between.
+Thank You
